@@ -4,6 +4,9 @@ services:
       context: ./jenkins/controller
       args:
         JENKINS_IMAGE: ${JENKINS_CONTROLLER_BUILD_IMAGE:-jenkins/jenkins:2.555.2-lts-jdk21}
+        JENKINS_UC: ${JENKINS_UC:-https://mirrors.huaweicloud.com/jenkins/update-center.json}
+        JENKINS_UC_EXPERIMENTAL: ${JENKINS_UC_EXPERIMENTAL:-https://mirrors.huaweicloud.com/jenkins/experimental/update-center.json}
+        JENKINS_INCREMENTALS_REPO_MIRROR: ${JENKINS_INCREMENTALS_REPO_MIRROR:-https://repo.jenkins-ci.org/incrementals}
     image: ${JENKINS_CONTROLLER_IMAGE:-jenkins-compose/controller:2.555.2-lts-jdk21}
     restart: unless-stopped
     environment:
@@ -23,6 +26,9 @@ services:
       JENKINS_AGENT_PORT: ${JENKINS_AGENT_PORT:-50000}
       JENKINS_AGENT_WORKDIR: ${JENKINS_AGENT_WORKDIR:-/home/jenkins/agent}
       JENKINS_CONTROLLER_EXECUTORS: ${JENKINS_CONTROLLER_EXECUTORS:-0}
+      JENKINS_UC: ${JENKINS_UC:-https://mirrors.huaweicloud.com/jenkins/update-center.json}
+      JENKINS_UC_DOWNLOAD: ${JENKINS_UC_DOWNLOAD:-https://mirrors.huaweicloud.com/jenkins}
+      JENKINS_UC_EXPERIMENTAL: ${JENKINS_UC_EXPERIMENTAL:-https://mirrors.huaweicloud.com/jenkins/experimental/update-center.json}
       JENKINS_SYSTEM_MESSAGE: ${JENKINS_SYSTEM_MESSAGE:-Managed by Configuration as Code in Docker Compose.}
       JENKINS_URL: ${JENKINS_URL:-http://localhost:8080/}
     ports:
