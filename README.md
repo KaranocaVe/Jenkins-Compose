@@ -33,7 +33,7 @@ docker compose up -d --build
 ## Config Surface
 
 - All image versions are exposed through `.env`: `JENKINS_CONTROLLER_BUILD_IMAGE`, `JENKINS_AGENT_BUILD_IMAGE`, `DOCKER_DIND_IMAGE`, and `DOCKER_CLI_IMAGE`
-- The Jenkins update center mirror is exposed through `.env`: `JENKINS_UC`, `JENKINS_UC_DOWNLOAD`, `JENKINS_UC_EXPERIMENTAL`, and `JENKINS_INCREMENTALS_REPO_MIRROR`
+- The Jenkins update center mirror is exposed through `.env`: `JENKINS_UC`, `JENKINS_PLUGIN_INFO`, `JENKINS_UC_DOWNLOAD`, `JENKINS_UC_DOWNLOAD_URL`, `JENKINS_UC_EXPERIMENTAL`, and `JENKINS_INCREMENTALS_REPO_MIRROR`
 - Common Jenkins settings are also exposed through `.env`: admin name/email, controller executors, system message, and agent name/description/labels/executors/mode/workdir
 - Extra runtime options can be appended through `JENKINS_OPTS` and `JENKINS_JAVA_OPTS_EXTRA`
 - JCasC now loads directly from `/usr/share/jenkins/ref/casc_configs/jenkins.yaml` inside the image instead of relying on a copied file in `jenkins_home`; after changing the image or `.env`, rebuild and restart the controller to apply the update
@@ -42,6 +42,7 @@ docker compose up -d --build
 
 - The default configuration now points Jenkins and `jenkins-plugin-cli` to the Huawei Cloud mirror
 - The configured default is `https://mirrors.huaweicloud.com/jenkins/update-center.json`
+- Plugin binaries are downloaded from `https://mirrors.huaweicloud.com/jenkins/plugins`
 - The previously suggested `https://mirrors.huaweicloud.com/jenkins/updates/update-center.json` currently returns `404`, so it is not used as the default
 
 ## Default Behavior

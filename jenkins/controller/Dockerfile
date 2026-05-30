@@ -2,6 +2,8 @@ ARG JENKINS_IMAGE=jenkins/jenkins:2.555.2-lts-jdk21
 FROM ${JENKINS_IMAGE}
 
 ARG JENKINS_UC=https://mirrors.huaweicloud.com/jenkins/update-center.json
+ARG JENKINS_PLUGIN_INFO=https://mirrors.huaweicloud.com/jenkins/update-center.json
+ARG JENKINS_UC_DOWNLOAD_URL=https://mirrors.huaweicloud.com/jenkins/plugins
 ARG JENKINS_UC_EXPERIMENTAL=https://mirrors.huaweicloud.com/jenkins/experimental/update-center.json
 ARG JENKINS_INCREMENTALS_REPO_MIRROR=https://repo.jenkins-ci.org/incrementals
 
@@ -14,6 +16,8 @@ RUN apt-get update \
 USER jenkins
 
 ENV JENKINS_UC=${JENKINS_UC} \
+    JENKINS_PLUGIN_INFO=${JENKINS_PLUGIN_INFO} \
+    JENKINS_UC_DOWNLOAD_URL=${JENKINS_UC_DOWNLOAD_URL} \
     JENKINS_UC_EXPERIMENTAL=${JENKINS_UC_EXPERIMENTAL} \
     JENKINS_INCREMENTALS_REPO_MIRROR=${JENKINS_INCREMENTALS_REPO_MIRROR}
 
