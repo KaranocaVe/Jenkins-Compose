@@ -1,0 +1,97 @@
+services:
+  jenkins:
+    build:
+      context: ./jenkins/controller
+      args:
+        JENKINS_IMAGE: ${JENKINS_CONTROLLER_BUILD_IMAGE:-jenkins/jenkins:2.555.2-lts-jdk21}
+    image: ${JENKINS_CONTROLLER_IMAGE:-jenkins-compose/controller:2.555.2-lts-jdk21}
+    restart: unless-stopped
+    environment:
+      CASC_JENKINS_CONFIG: /usr/share/jenkins/ref/casc_configs/jenkins.yaml
+      JAVA_OPTS: -Djenkins.install.runSetupWizard=false ${JENKINS_JAVA_OPTS_EXTRA:-}
+      JENKINS_OPTS: ${JENKINS_OPTS:-}
+      JENKINS_ADMIN_ID: ${JENKINS_ADMIN_ID:-admin}
+      JENKINS_ADMIN_NAME: ${JENKINS_ADMIN_NAME:-Jenkins Admin}
+      JENKINS_ADMIN_EMAIL: ${JENKINS_ADMIN_EMAIL:-admin@example.invalid}
+      JENKINS_ADMIN_PASSWORD: ${JENKINS_ADMIN_PASSWORD:-change-me-now}
+      JENKINS_AGENT_NAME: ${JENKINS_AGENT_NAME:-docker-agent-1}
+      JENKINS_AGENT_DESCRIPTION: ${JENKINS_AGENT_DESCRIPTION:-Compose-managed Docker build agent}
+      JENKINS_AGENT_EXECUTORS: ${JENKINS_AGENT_EXECUTORS:-1}
+      JENKINS_AGENT_INTERNAL_DIR: ${JENKINS_AGENT_INTERNAL_DIR:-remoting}
+      JENKINS_AGENT_LABELS: ${JENKINS_AGENT_LABELS:-docker linux}
+      JENKINS_AGENT_MODE: ${JENKINS_AGENT_MODE:-EXCLUSIVE}
+      JENKINS_AGENT_PORT: ${JENKINS_AGENT_PORT:-50000}
+      JENKINS_AGENT_WORKDIR: ${JENKINS_AGENT_WORKDIR:-/home/jenkins/agent}
+      JENKINS_CONTROLLER_EXECUTORS: ${JENKINS_CONTROLLER_EXECUTORS:-0}
+      JENKINS_SYSTEM_MESSAGE: ${JENKINS_SYSTEM_MESSAGE:-Managed by Configuration as Code in Docker Compose.}
+      JENKINS_URL: ${JENKINS_URL:-http://localhost:8080/}
+    ports:
+      - "${JENKINS_HTTP_PORT:-8080}:8080"
+      - "${JENKINS_AGENT_PORT:-50000}:50000"
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - docker_certs:/certs:ro
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8080/login >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+      start_period: 60s
+    networks:
+      - jenkins_net
+
+  docker:
+    image: ${DOCKER_DIND_IMAGE:-docker:29.5.2-dind}
+    restart: unless-stopped
+    privileged: true
+    environment:
+      DOCKER_TLS_CERTDIR: /certs
+    volumes:
+      - docker_data:/var/lib/docker
+      - docker_certs:/certs
+    healthcheck:
+      test: ["CMD-SHELL", "docker info >/dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+    networks:
+      - jenkins_net
+
+  agent:
+    build:
+      context: ./jenkins/agent
+      args:
+        INBOUND_AGENT_IMAGE: ${JENKINS_AGENT_BUILD_IMAGE:-jenkins/inbound-agent:3355.v388858a_47b_33-21-jdk21}
+        DOCKER_CLI_IMAGE: ${DOCKER_CLI_IMAGE:-docker:29.5.2-cli}
+    image: ${JENKINS_AGENT_IMAGE:-jenkins-compose/agent:3355.v388858a_47b_33-21-jdk21-docker29.5.2}
+    restart: unless-stopped
+    depends_on:
+      jenkins:
+        condition: service_healthy
+      docker:
+        condition: service_healthy
+    environment:
+      DOCKER_CERT_PATH: /certs/client
+      DOCKER_HOST: tcp://docker:2376
+      DOCKER_TLS_VERIFY: "1"
+      JENKINS_ADMIN_ID: ${JENKINS_ADMIN_ID:-admin}
+      JENKINS_ADMIN_PASSWORD: ${JENKINS_ADMIN_PASSWORD:-change-me-now}
+      JENKINS_AGENT_NAME: ${JENKINS_AGENT_NAME:-docker-agent-1}
+      JENKINS_AGENT_WORKDIR: ${JENKINS_AGENT_WORKDIR:-/home/jenkins/agent}
+      JENKINS_INTERNAL_URL: ${JENKINS_INTERNAL_URL:-http://jenkins:8080/}
+    volumes:
+      - agent_home:/home/jenkins/agent
+      - docker_certs:/certs:ro
+    networks:
+      - jenkins_net
+
+networks:
+  jenkins_net:
+    driver: bridge
+
+volumes:
+  agent_home:
+  docker_certs:
+  docker_data:
+  jenkins_home:

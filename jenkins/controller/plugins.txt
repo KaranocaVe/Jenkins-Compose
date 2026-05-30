@@ -1,0 +1,10 @@
+configuration-as-code:2081.v2d0940662a_34
+workflow-aggregator:608.v67378e9d3db_1
+git:5.10.1
+credentials-binding:725.ve52b_2328a_fde
+docker-workflow:634.vedc7242b_eda_7
+ssh-agent:396.vcc7d84e622ec
+matrix-auth:3.2.10
+pipeline-stage-view:2.41
+timestamper:1.30
+ws-cleanup:0.49

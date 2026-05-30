@@ -1,0 +1,49 @@
+jenkins:
+  authorizationStrategy:
+    globalMatrix:
+      entries:
+        - user:
+            name: "${JENKINS_ADMIN_ID}"
+            permissions:
+              - "Overall/Administer"
+  numExecutors: ${JENKINS_CONTROLLER_EXECUTORS:-0}
+  nodes:
+    - permanent:
+        nodeDescription: "${JENKINS_AGENT_DESCRIPTION:-Compose-managed Docker build agent}"
+        labelString: "${JENKINS_AGENT_LABELS:-docker linux}"
+        launcher:
+          inbound:
+            webSocket: true
+            workDirSettings:
+              disabled: false
+              failIfWorkDirIsMissing: false
+              internalDir: "${JENKINS_AGENT_INTERNAL_DIR:-remoting}"
+              workDirPath: "${JENKINS_AGENT_WORKDIR:-/home/jenkins/agent}"
+        mode: "${JENKINS_AGENT_MODE:-EXCLUSIVE}"
+        name: "${JENKINS_AGENT_NAME:-docker-agent-1}"
+        numExecutors: ${JENKINS_AGENT_EXECUTORS:-1}
+        remoteFS: "${JENKINS_AGENT_WORKDIR:-/home/jenkins/agent}"
+        retentionStrategy: "always"
+  securityRealm:
+    local:
+      allowsSignup: false
+      enableCaptcha: false
+      users:
+        - id: "${JENKINS_ADMIN_ID}"
+          name: "${JENKINS_ADMIN_NAME:-Jenkins Admin}"
+          password: "${JENKINS_ADMIN_PASSWORD}"
+  slaveAgentPort: ${JENKINS_AGENT_PORT}
+  systemMessage: "${JENKINS_SYSTEM_MESSAGE:-Managed by Configuration as Code in Docker Compose.}"
+
+tool:
+  git:
+    installations:
+      - home: "/usr/bin/git"
+        name: "git"
+
+unclassified:
+  location:
+    adminAddress: "${JENKINS_ADMIN_EMAIL:-admin@example.invalid}"
+    url: "${JENKINS_URL}"
+  timestamperConfig:
+    allPipelines: true
