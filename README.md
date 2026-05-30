@@ -1,60 +1,60 @@
 # Jenkins Compose
 
-三服务 Jenkins Compose：`controller + DinD + 常驻 agent`。
+A three-service Jenkins Compose stack: `controller + DinD + persistent agent`.
 
-当前实现使用官方现有可用的 `Jenkins LTS + JDK 21` 镜像。原计划中的 `JDK 17` 官方 tag 已不再提供，因此这里固定到了可实际拉取和运行的 LTS 版本。
+This implementation uses the currently available official `Jenkins LTS + JDK 21` images. The original `JDK 17` plan is not used because the official `jdk17` tags are no longer published on Docker Hub.
 
 ## Quick Start
 
-1. 复制环境变量模板：
+1. Copy the environment template:
 
 ```bash
 cp .env.example .env
 ```
 
-2. 修改 `.env` 里的管理员密码和访问 URL。
+2. Update the admin password and access URL in `.env`.
 
-   现在镜像版本和大部分 Jenkins 基础配置也都在 `.env` 里，可以直接按环境覆盖。
+   Image versions and most Jenkins baseline settings are also exposed through `.env`, so they can be overridden per environment.
 
-3. 启动：
+3. Start the stack:
 
 ```bash
 docker compose up -d --build
 ```
 
-4. 访问 [http://localhost:8080/login](http://localhost:8080/login) 并使用 `.env` 中的管理员账号登录。
+4. Open [http://localhost:8080/login](http://localhost:8080/login) and sign in with the admin credentials from `.env`.
 
-## 结构
+## Structure
 
-- `docker-compose.yml`: Jenkins、DinD、agent 三服务编排
-- `jenkins/controller/`: controller 自定义镜像、插件锁定、JCasC
-- `jenkins/agent/`: 常驻 inbound agent 镜像与自动注册脚本
+- `docker-compose.yml`: orchestration for Jenkins, DinD, and the persistent agent
+- `jenkins/controller/`: custom controller image, pinned plugins, and JCasC
+- `jenkins/agent/`: persistent inbound agent image and auto-registration script
 
 ## Config Surface
 
-- 镜像版本已全部外提到 `.env`：`JENKINS_CONTROLLER_BUILD_IMAGE`、`JENKINS_AGENT_BUILD_IMAGE`、`DOCKER_DIND_IMAGE`、`DOCKER_CLI_IMAGE`
-- Jenkins 常用配置也已外提到 `.env`：管理员名称/邮箱、controller executors、system message、agent 名称/描述/labels/executors/mode/workdir
-- 运行时参数可通过 `JENKINS_OPTS` 和 `JENKINS_JAVA_OPTS_EXTRA` 继续补充
-- JCasC 现在直接从镜像内 `/usr/share/jenkins/ref/casc_configs/jenkins.yaml` 读取，不再依赖 `jenkins_home` 里的拷贝文件；修改镜像或 `.env` 后，重建并重启 controller 就能生效
+- All image versions are exposed through `.env`: `JENKINS_CONTROLLER_BUILD_IMAGE`, `JENKINS_AGENT_BUILD_IMAGE`, `DOCKER_DIND_IMAGE`, and `DOCKER_CLI_IMAGE`
+- Common Jenkins settings are also exposed through `.env`: admin name/email, controller executors, system message, and agent name/description/labels/executors/mode/workdir
+- Extra runtime options can be appended through `JENKINS_OPTS` and `JENKINS_JAVA_OPTS_EXTRA`
+- JCasC now loads directly from `/usr/share/jenkins/ref/casc_configs/jenkins.yaml` inside the image instead of relying on a copied file in `jenkins_home`; after changing the image or `.env`, rebuild and restart the controller to apply the update
 
-## 默认行为
+## Default Behavior
 
-- Jenkins 首次启动时跳过 setup wizard
-- 本地管理员账号由 JCasC 自动创建
-- controller `numExecutors=0`，不直接跑构建
-- 常驻 agent 使用 label `docker linux`
-- agent 通过 WebSocket 自动回连 Jenkins
-- Docker 构建通过 TLS 访问 DinD，不挂宿主机 `docker.sock`
+- Jenkins skips the setup wizard on first boot
+- The local admin account is created automatically by JCasC
+- The controller runs with `numExecutors=0` and does not execute builds directly
+- The persistent agent uses the `docker linux` label set
+- The agent reconnects to Jenkins automatically over WebSocket
+- Docker builds use TLS to talk to DinD and do not mount the host `docker.sock`
 
-## 反向代理预留
+## Reverse Proxy Readiness
 
-- `JENKINS_URL` 用于 Jenkins 对外展示地址，可改成未来域名
-- `JENKINS_INTERNAL_URL` 仅供容器内 agent 回连 controller，默认保持 `http://jenkins:8080/`
-- 后续接入反向代理时，需要正确转发 `X-Forwarded-*` 请求头，并允许 WebSocket upgrade
+- `JENKINS_URL` is the external Jenkins URL and can be changed to a future domain
+- `JENKINS_INTERNAL_URL` is only used by the containerized agent to reconnect to the controller and should usually stay `http://jenkins:8080/`
+- When adding a reverse proxy later, it must forward `X-Forwarded-*` headers correctly and allow WebSocket upgrade requests
 
 ## Smoke Test Pipeline
 
-在 Jenkins 里创建一个 Pipeline，使用下面的最小示例验证 agent 与 DinD：
+Create a Jenkins Pipeline and use the following minimal example to verify the agent-to-DinD path:
 
 ```groovy
 pipeline {
